@@ -47,8 +47,16 @@ type checkFiltersArgs struct {
 
 var (
 	checkFiltersCommand = &cobra.Command{
-		Short: "filters",
 		Use:   `filters`,
+		Short: "Checks OWNERS filters expressions for matching files",
+		Long: `Checks the filters expressions inside OWNERS files.
+
+Checks that:
+* the filter expressions compile to valid go regular expressions
+* each expression matches at least one file
+
+Will output a list of matching files for each of the expressions.
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := cmd.InheritedFlags().Parse(args)
 			if err != nil {
@@ -111,12 +119,13 @@ func checkFilters(args checkFiltersArgs) {
 			filterRegex := regexp.MustCompile(fileFilterExpression)
 			var matchingFiles []string
 			pathDir := filepath.Dir(path) + "/"
+			fileFilterExpressionsLogger := log().WithFields(logrus.Fields{
+				"pathDir": pathDir,
+				"regex":   fileFilterExpression,
+			})
 			err = filepath.WalkDir(pathDir, func(innerpath string, innerd os.DirEntry, innererr error) error {
 				checkPath := strings.TrimPrefix(innerpath, pathDir)
-				log().WithFields(logrus.Fields{
-					"checkPath": checkPath,
-					"regex":     fileFilterExpression,
-				}).Debug("check match")
+				fileFilterExpressionsLogger.Debug("check match")
 				if filterRegex.MatchString(checkPath) {
 					matchingFiles = append(matchingFiles, checkPath)
 				}
@@ -125,7 +134,7 @@ func checkFilters(args checkFiltersArgs) {
 			if len(matchingFiles) == 0 {
 				return fmt.Errorf("no files matched filter %s", fileFilterExpression)
 			}
-			log().WithField("filter", fileFilterExpression).Infof("files matched: %v", matchingFiles)
+			fileFilterExpressionsLogger.Infof("files matched: %v", matchingFiles)
 			if err != nil {
 				return err
 			}

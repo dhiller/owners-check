@@ -22,7 +22,6 @@
 package owners_check
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 )
 
@@ -35,8 +34,7 @@ func init() {
 func log() *logrus.Entry {
 	return logrus.StandardLogger().
 		WithFields(logrus.Fields{
-			"robot":     robotName,
-			"directory": fmt.Sprintf("%q", checkFiltersArguments.directory),
+			"robot": robotName,
 		},
 		)
 }
